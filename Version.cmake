@@ -2,21 +2,20 @@
 # Version.cmake
 # Author: Alexey "LexPest" Mihailov
 
-function (generateVersionVarsFromGit, par_PROJECT_REPO_DIR, par_VERSION_CPP_PATH){
-    execute_process(COMMAND git log --pretty=format:'%h' -n 1
+# Execute function AFTER the project version parameters is set
+function (generateVersionVarsFromGit par_PROJECT_REPO_DIR par_VERSION_CPP_IN_PATH par_VERSION_CPP_OUT_PATH)
+    execute_process(COMMAND git log --pretty=format:'%H' -n 1
                     OUTPUT_VARIABLE GIT_REV
                     WORKING_DIRECTORY ${par_PROJECT_REPO_DIR}
                     ERROR_QUIET)
 
     # In case Git log is unavailable, don't touch anything
     if ("${GIT_REV}" STREQUAL "")
-        set(GIT_REV "" PARENT_SCOPE)
-        set(GIT_DIFF "" PARENT_SCOPE)
-        set(GIT_TAG "" PARENT_SCOPE)
-        set(GIT_BRANCH "" PARENT_SCOPE)
+        message("[Version] Git log is unavailable, ${par_VERSION_CPP_OUT_PATH} won't be generated")
+        return()
     else()
         execute_process(
-            COMMAND bash -c "${par_PROJECT_REPO_DIR}git diff --quiet --exit-code || echo +"
+            COMMAND bash -c "git diff --quiet --exit-code || echo +"
             WORKING_DIRECTORY ${par_PROJECT_REPO_DIR}
             OUTPUT_VARIABLE GIT_DIFF)
         execute_process(
@@ -29,27 +28,25 @@ function (generateVersionVarsFromGit, par_PROJECT_REPO_DIR, par_VERSION_CPP_PATH
             OUTPUT_VARIABLE GIT_BRANCH)
 
         string(STRIP "${GIT_REV}" GIT_REV)
-        string(SUBSTRING "${GIT_REV}" 1 12 GIT_REV)
+        string(SUBSTRING "${GIT_REV}" 1 40 GIT_REV)
         string(STRIP "${GIT_DIFF}" GIT_DIFF)
         string(STRIP "${GIT_TAG}" GIT_TAG)
         string(STRIP "${GIT_BRANCH}" GIT_BRANCH)
-    endif()
 
-    set(VERSION "const char* GIT_REV=\"${GIT_REV}${GIT_DIFF}\";
-    const char* GIT_TAG=\"${GIT_TAG}\";
-    const char* GIT_BRANCH=\"${GIT_BRANCH}\";" PARENT_DIRECTORY)
-
-    if NOT ("${par_VERSION_CPP_PATH}" STREQUAL "")
-
-        if(EXISTS ${par_VERSION_CPP_PATH})
-            file(READ ${par_VERSION_CPP_PATH} VERSION_)
+        if (${GIT_DIFF} STREQUAL "+")
+            set(GIT_DIF_BOOL "true")
         else()
-            set(VERSION_ "")
+            set(GIT_DIF_BOOL "false")
         endif()
-
-        if (NOT "${VERSION}" STREQUAL "${VERSION_}")
-            file(WRITE ${par_VERSION_CPP_PATH}"${VERSION}")
-        endif()
-
     endif()
-}
+
+    if (NOT "${par_VERSION_CPP_IN_PATH}" STREQUAL "" AND
+        NOT "${par_VERSION_CPP_OUT_PATH}" STREQUAL "")
+
+        configure_file(${par_VERSION_CPP_IN_PATH}
+                ${par_VERSION_CPP_OUT_PATH} @ONLY)
+
+        message("[Version] Git version - generated successfully")
+    endif()
+
+endfunction()

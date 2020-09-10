@@ -1,0 +1,11 @@
+// Ignix-CMake-Submodules
+// Version.cmake - Version.cpp.in
+// Author: Alexey "LexPest" Mihailov
+
+const char GIT_REV[] = "@GIT_REV@";
+const char GIT_BRANCH_NAME[] = "@GIT_BRANCH@";
+const char GIT_TAG[] = "@GIT_TAG@";
+const bool GIT_CHANGES_DETECTED = @GIT_DIF_BOOL@;
+const unsigned int CMAKE_VER_MAJOR = @VERSION_MAJOR@;
+const unsigned int CMAKE_VER_MINOR = @VERSION_MINOR@;
+const unsigned int CMAKE_VER_PATCH = @VERSION_PATCH@;
